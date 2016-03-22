@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
 	int fps=0;
 	objects[sun].model = glm::scale(glm::mat4(1.0f), glm::vec3(0.85f));
 	while (!glfwWindowShouldClose(window))
-	{
+	{//program will keep draw here until you close the window
 		float delta = glfwGetTime() - start;
 		render();
 		glfwSwapBuffers(window);
