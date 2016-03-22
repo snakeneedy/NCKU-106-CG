@@ -261,7 +261,7 @@ static void render()
 		glUseProgram(objects[i].program);
 		glBindVertexArray(objects[i].vao);
 		glBindTexture(GL_TEXTURE_2D, objects[i].texture);
-		setUniformMat4(objects[i].program, "model", objects[i].model);
+		//you should send some data to shader here
 		glDrawElements(GL_TRIANGLES, indicesCount[i], GL_UNSIGNED_INT, nullptr);
 	}
 	glBindVertexArray(0);
