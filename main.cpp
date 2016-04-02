@@ -221,8 +221,8 @@ static void releaseObjects() {
         glDeleteVertexArrays(1, &objects[i].vao);
         glDeleteTextures(1, &objects[i].texture);
         glDeleteBuffers(4, objects[i].vbo);
+        glDeleteProgram(objects[i].program);
     }
-    glDeleteProgram(program);
 }
 
 static void setUniformMat4(unsigned int program, const std::string &name, const glm::mat4 &mat) {
