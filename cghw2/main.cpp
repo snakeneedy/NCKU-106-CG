@@ -305,8 +305,8 @@ int main(int argc, char *argv[])
 	glfwSetKeyCallback(window, key_callback);
 
 	// load shader program
-	program = setup_shader(readfile("vs.txt").c_str(), readfile("fs.txt").c_str());
-	program2 = setup_shader(readfile("vs2.txt").c_str(), readfile("fs.txt").c_str());
+	program = setup_shader(readfile("shader/sun.vs.glsl").c_str(), readfile("shader/fs.glsl").c_str());
+	program2 = setup_shader(readfile("shader/earth.vs.glsl").c_str(), readfile("shader/fs.glsl").c_str());
 
 	int sun = add_obj(program, "materials/sun.obj","materials/sun.bmp");
 	int earth = add_obj(program2, "materials/earth.obj","materials/earth.bmp");
