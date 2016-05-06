@@ -308,8 +308,8 @@ int main(int argc, char *argv[])
 	program = setup_shader(readfile("vs.txt").c_str(), readfile("fs.txt").c_str());
 	program2 = setup_shader(readfile("vs2.txt").c_str(), readfile("fs.txt").c_str());
 
-	int sun = add_obj(program, "sun.obj","sun.bmp");
-	int earth = add_obj(program2, "earth.obj","earth.bmp");
+	int sun = add_obj(program, "materials/sun.obj","materials/sun.bmp");
+	int earth = add_obj(program2, "materials/earth.obj","materials/earth.bmp");
 
 	// GL_DEPTH_TEST: do depth comparisons and update the depth buffer
 	glEnable(GL_DEPTH_TEST);
