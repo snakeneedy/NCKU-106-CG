@@ -26,6 +26,117 @@ std::vector<object_struct> objects;//vertex array object,vertex buffer object an
 unsigned int program, program2;
 std::vector<int> indicesCount;//Number of indice of objs
 
+static void error_callback(int error, const char* description);
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+static unsigned int setup_shader(const char *vertex_shader, const char *fragment_shader);
+static std::string readfile(const char *filename);
+static unsigned char *load_bmp(const char *bmp, unsigned int *width, unsigned int *height, unsigned short int *bits);
+static int add_obj(unsigned int program, const char *filename,const char *texbmp);
+static void releaseObjects();
+static void setUniformMat4(unsigned int program, const std::string &name, const glm::mat4 &mat);
+static void render();
+
+int main(int argc, char *argv[])
+{
+	GLFWwindow* window;
+	// set which function to be called when error occur
+	glfwSetErrorCallback(error_callback);
+	// initialize GLFW
+	if (!glfwInit())
+		exit(EXIT_FAILURE);
+	// OpenGL 3.3, Mac OS X is reported to have some problem. However I don't have Mac to test
+	// set the specified window hint
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	// For Mac OS X
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	// create a window with specific size and title
+	window = glfwCreateWindow(800, 600, "Computer Graphic HW. 2", NULL, NULL);
+	if (!window)
+	{
+		glfwTerminate();
+		return EXIT_FAILURE;
+	}
+
+	// make the context of the specific window on the calling thread
+	glfwMakeContextCurrent(window);
+
+	// This line MUST put below glfwMakeContextCurrent
+	glewExperimental = GL_TRUE;
+	glewInit();
+
+	// Enable vsync
+	glfwSwapInterval(1);
+
+	// Setup input callback
+	glfwSetKeyCallback(window, key_callback);
+
+	// load shader program
+	program = setup_shader(readfile("shader/vs.glsl").c_str(), readfile("shader/fs.glsl").c_str());
+	program2 = setup_shader(readfile("shader/vs.glsl").c_str(), readfile("shader/fs.glsl").c_str());
+
+	int sun = add_obj(program, "materials/sun.obj","materials/sun.bmp");
+	int earth = add_obj(program2, "materials/earth.obj","materials/earth.bmp");
+
+	// GL_DEPTH_TEST: do depth comparisons and update the depth buffer
+	glEnable(GL_DEPTH_TEST);
+	// cull out back-face
+	glCullFace(GL_BACK);
+	// Enable blend mode for billboard
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// default viewpoint in HW.2
+	setUniformMat4(program, "vp", glm::perspective(glm::radians(45.0f), 640.0f/480, 1.0f, 100.f)*
+			glm::lookAt(glm::vec3(20.0f), glm::vec3(), glm::vec3(0, 1, 0))*glm::mat4(1.0f));
+	setUniformMat4(program2, "vp", glm::perspective(glm::radians(45.0f), 640.0f/480, 1.0f, 100.f)*
+			glm::lookAt(glm::vec3(20.0f), glm::vec3(), glm::vec3(0, 1, 0))*glm::mat4(1.0f));
+	// glm::mat4 tl=glm::translate(glm::mat4(),glm::vec3(15.0f,0.0f,0.0));
+	// glm::mat4 rot;
+	// glm::mat4 rev;
+
+	// reference velocity
+	const float constFVelocity = 1000.f;
+	// set velocity (with real-world ratio)
+	float earthRevolutionRadius = 11.5f,
+			earthRevolutionVelocity = constFVelocity / 365.25f,
+			earthRotationVelocity = constFVelocity,
+			sunRotationVelocity = constFVelocity / 24.47f;
+	float last, start;
+	last = start = glfwGetTime();
+	int fps=0;
+	// objects[sun].model = glm::scale(glm::mat4(1.0f), glm::vec3(0.85f));
+	while (!glfwWindowShouldClose(window))
+	{//program will keep draw here until you close the window
+		float delta = glfwGetTime() - start;
+		// send model's translation and rotation to sl.
+		setUniformMat4(program, "model", glm::rotate(glm::mat4(1.f), (float) glm::radians(sunRotationVelocity * delta), glm::vec3(0,1,0)));
+		setUniformMat4(program2, "model",  glm::translate(glm::mat4(),glm::vec3(earthRevolutionRadius * cos(-glm::radians(earthRevolutionVelocity * delta)),0.0f,earthRevolutionRadius * sin(-glm::radians(earthRevolutionVelocity * delta)))) *
+			glm::rotate(glm::mat4(1.f), (float) glm::radians(earthRotationVelocity * delta), glm::vec3(0,1,0)));
+		// draw!!!
+		render();
+		// swap the front and back buffers of the specified window
+		glfwSwapBuffers(window);
+		// process events, which is in the event queue, and then returns immediately
+		glfwPollEvents();
+		fps++;
+		if(glfwGetTime() - last > 1.0)
+		{
+			std::cout<<(double)fps/(glfwGetTime()-last)<<std::endl;
+			fps = 0;
+			last = glfwGetTime();
+		}
+	}
+
+	releaseObjects();
+	glfwDestroyWindow(window);
+	glfwTerminate();
+	return EXIT_SUCCESS;
+}
+
+
+
 static void error_callback(int error, const char* description)
 {
 	fputs(description, stderr);
@@ -268,101 +379,3 @@ static void render()
 	glBindVertexArray(0);
 }
 
-int main(int argc, char *argv[])
-{
-	GLFWwindow* window;
-	// set which function to be called when error occur
-	glfwSetErrorCallback(error_callback);
-	// initialize GLFW
-	if (!glfwInit())
-		exit(EXIT_FAILURE);
-	// OpenGL 3.3, Mac OS X is reported to have some problem. However I don't have Mac to test
-	// set the specified window hint
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	// For Mac OS X
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	// create a window with specific size and title
-	window = glfwCreateWindow(800, 600, "Computer Graphic HW. 2", NULL, NULL);
-	if (!window)
-	{
-		glfwTerminate();
-		return EXIT_FAILURE;
-	}
-
-	// make the context of the specific window on the calling thread
-	glfwMakeContextCurrent(window);
-
-	// This line MUST put below glfwMakeContextCurrent
-	glewExperimental = GL_TRUE;
-	glewInit();
-
-	// Enable vsync
-	glfwSwapInterval(1);
-
-	// Setup input callback
-	glfwSetKeyCallback(window, key_callback);
-
-	// load shader program
-	program = setup_shader(readfile("shader/vs.glsl").c_str(), readfile("shader/fs.glsl").c_str());
-	program2 = setup_shader(readfile("shader/vs.glsl").c_str(), readfile("shader/fs.glsl").c_str());
-
-	int sun = add_obj(program, "materials/sun.obj","materials/sun.bmp");
-	int earth = add_obj(program2, "materials/earth.obj","materials/earth.bmp");
-
-	// GL_DEPTH_TEST: do depth comparisons and update the depth buffer
-	glEnable(GL_DEPTH_TEST);
-	// cull out back-face
-	glCullFace(GL_BACK);
-	// Enable blend mode for billboard
-	//glEnable(GL_BLEND);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	// default viewpoint in HW.2
-	setUniformMat4(program, "vp", glm::perspective(glm::radians(45.0f), 640.0f/480, 1.0f, 100.f)*
-			glm::lookAt(glm::vec3(20.0f), glm::vec3(), glm::vec3(0, 1, 0))*glm::mat4(1.0f));
-	setUniformMat4(program2, "vp", glm::perspective(glm::radians(45.0f), 640.0f/480, 1.0f, 100.f)*
-			glm::lookAt(glm::vec3(20.0f), glm::vec3(), glm::vec3(0, 1, 0))*glm::mat4(1.0f));
-	// glm::mat4 tl=glm::translate(glm::mat4(),glm::vec3(15.0f,0.0f,0.0));
-	// glm::mat4 rot;
-	// glm::mat4 rev;
-
-	// reference velocity
-	const float constFVelocity = 1000.f;
-	// set velocity (with real-world ratio)
-	float earthRevolutionRadius = 11.5f,
-			earthRevolutionVelocity = constFVelocity / 365.25f,
-			earthRotationVelocity = constFVelocity,
-			sunRotationVelocity = constFVelocity / 24.47f;
-	float last, start;
-	last = start = glfwGetTime();
-	int fps=0;
-	// objects[sun].model = glm::scale(glm::mat4(1.0f), glm::vec3(0.85f));
-	while (!glfwWindowShouldClose(window))
-	{//program will keep draw here until you close the window
-		float delta = glfwGetTime() - start;
-		// send model's translation and rotation to sl.
-		setUniformMat4(program, "model", glm::rotate(glm::mat4(1.f), (float) glm::radians(sunRotationVelocity * delta), glm::vec3(0,1,0)));
-		setUniformMat4(program2, "model",  glm::translate(glm::mat4(),glm::vec3(earthRevolutionRadius * cos(-glm::radians(earthRevolutionVelocity * delta)),0.0f,earthRevolutionRadius * sin(-glm::radians(earthRevolutionVelocity * delta)))) *
-			glm::rotate(glm::mat4(1.f), (float) glm::radians(earthRotationVelocity * delta), glm::vec3(0,1,0)));
-		// draw!!!
-		render();
-		// swap the front and back buffers of the specified window
-		glfwSwapBuffers(window);
-		// process events, which is in the event queue, and then returns immediately
-		glfwPollEvents();
-		fps++;
-		if(glfwGetTime() - last > 1.0)
-		{
-			std::cout<<(double)fps/(glfwGetTime()-last)<<std::endl;
-			fps = 0;
-			last = glfwGetTime();
-		}
-	}
-
-	releaseObjects();
-	glfwDestroyWindow(window);
-	glfwTerminate();
-	return EXIT_SUCCESS;
-}
