@@ -29,6 +29,7 @@ std::vector<int> indicesCount;//Number of indice of objs
 static void error_callback(int error, const char* description);
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 static unsigned int setup_shader(const char *vertex_shader, const char *fragment_shader);
+void setup_both_shader(const char *vertex_shader, const char *fragment_shader);
 static std::string readfile(const char *filename);
 static unsigned char *load_bmp(const char *bmp, unsigned int *width, unsigned int *height, unsigned short int *bits);
 static int add_obj(unsigned int program, const char *filename,const char *texbmp);
@@ -76,16 +77,17 @@ int main(int argc, char *argv[])
 	glfwSetKeyCallback(window, key_callback);
 
 	// load shader program
-	program = setup_shader(readfile("shaders/vs.glsl").c_str(), readfile("shaders/fs.glsl").c_str());
-	program2 = setup_shader(readfile("shaders/vs.glsl").c_str(), readfile("shaders/fs.glsl").c_str());
+	setup_both_shader(readfile("shaders/vs.glsl").c_str(), readfile("shaders/fs.glsl").c_str());
+	// program = setup_shader(readfile("shaders/vs.glsl").c_str(), readfile("shaders/fs.glsl").c_str());
+	// program2 = setup_shader(readfile("shaders/vs.glsl").c_str(), readfile("shaders/fs.glsl").c_str());
 
-	int sun = add_obj(program, "materials/sun.obj","materials/sun.bmp");
-	int earth = add_obj(program2, "materials/earth.obj","materials/earth.bmp");
+	// int sun = add_obj(program, "materials/sun.obj","materials/sun.bmp");
+	// int earth = add_obj(program2, "materials/earth.obj","materials/earth.bmp");
 
 	// GL_DEPTH_TEST: do depth comparisons and update the depth buffer
-	glEnable(GL_DEPTH_TEST);
+	// glEnable(GL_DEPTH_TEST);
 	// cull out back-face
-	glCullFace(GL_BACK);
+	// glCullFace(GL_BACK);
 	// Enable blend mode for billboard
 	//glEnable(GL_BLEND);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -97,12 +99,6 @@ int main(int argc, char *argv[])
 
 	glm::vec3 lightColor = glm::vec3(1.0f);
 	glm::vec3 lightPos = glm::vec3(0.0f, 10.0f, 10.0f);
-
-	setBothUniformMat4("view", view);
-	setBothUniformMat4("projection", projection);
-	setBothUniformVec3("lightColor", lightColor);
-	setBothUniformVec3("lightPos", lightPos);
-	setBothUniformVec3("cameraPos", cameraPos);
 
 	glProvokingVertex(GL_FIRST_VERTEX_CONVENTION);
 
@@ -119,28 +115,31 @@ int main(int argc, char *argv[])
 			sunRotationVelocity = constFVelocity / 24.47f;
 	float last, start;
 	last = start = glfwGetTime();
-	int fps=0;
-	// objects[sun].model = glm::scale(glm::mat4(1.0f), glm::vec3(0.85f));
+
+	std::cout << "0: HW2 shading (default)\n";
+	std::cout << "1: Flat shading\n";
+	std::cout << "2: Gouraud shading\n";
+	std::cout << "3: Phong shading\n";
+	std::cout << "4: Blinn-phong shading\n";
+	
 	while (!glfwWindowShouldClose(window))
 	{//program will keep draw here until you close the window
 		float delta = glfwGetTime() - start;
 		// send model's translation and rotation to sl.
-		setUniformMat4(program, "model", glm::rotate(glm::mat4(1.f), (float) glm::radians(sunRotationVelocity * delta), glm::vec3(0,1,0)));
-		setUniformMat4(program2, "model",  glm::translate(glm::mat4(),glm::vec3(earthRevolutionRadius * cos(-glm::radians(earthRevolutionVelocity * delta)),0.0f,earthRevolutionRadius * sin(-glm::radians(earthRevolutionVelocity * delta)))) *
+		setUniformMat4(::program, "model", glm::rotate(glm::mat4(1.f), (float) glm::radians(sunRotationVelocity * delta), glm::vec3(0,1,0)));
+		setUniformMat4(::program2, "model",  glm::translate(glm::mat4(),glm::vec3(earthRevolutionRadius * cos(-glm::radians(earthRevolutionVelocity * delta)),0.0f,earthRevolutionRadius * sin(-glm::radians(earthRevolutionVelocity * delta)))) *
 			glm::rotate(glm::mat4(1.f), (float) glm::radians(earthRotationVelocity * delta), glm::vec3(0,1,0)));
-		
+		setBothUniformMat4("view", view);
+		setBothUniformMat4("projection", projection);
+		setBothUniformVec3("lightColor", lightColor);
+		setBothUniformVec3("lightPos", lightPos);
+		setBothUniformVec3("cameraPos", cameraPos);
 		// draw!!!
 		render();
 		// swap the front and back buffers of the specified window
 		glfwSwapBuffers(window);
 		// process events, which is in the event queue, and then returns immediately
 		glfwPollEvents();
-		fps++;
-		if(glfwGetTime() - last > 1.0)
-		{
-			fps = 0;
-			last = glfwGetTime();
-		}
 	}
 
 	releaseObjects();
@@ -159,6 +158,16 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
+	else if (key == GLFW_KEY_0 && action == GLFW_PRESS)
+		setup_both_shader(readfile("shaders/vs.glsl").c_str(), readfile("shaders/fs.glsl").c_str());
+	else if (key == GLFW_KEY_1 && action == GLFW_PRESS)
+		setup_both_shader(readfile("shaders/flat.vs.glsl").c_str(), readfile("shaders/flat.fs.glsl").c_str());
+	else if (key == GLFW_KEY_2 && action == GLFW_PRESS)
+		setup_both_shader(readfile("shaders/gouraud.vs.glsl").c_str(), readfile("shaders/gouraud.fs.glsl").c_str());
+	else if (key == GLFW_KEY_3 && action == GLFW_PRESS)
+		setup_both_shader(readfile("shaders/phong.vs.glsl").c_str(), readfile("shaders/phong.fs.glsl").c_str());
+	else if (key == GLFW_KEY_4 && action == GLFW_PRESS)
+		setup_both_shader(readfile("shaders/blinn-phong.vs.glsl").c_str(), readfile("shaders/blinn-phong.fs.glsl").c_str());
 }
 
 static unsigned int setup_shader(const char *vertex_shader, const char *fragment_shader)
@@ -238,6 +247,16 @@ static unsigned int setup_shader(const char *vertex_shader, const char *fragment
 		return 0;
 	}
 	return program;
+}
+void setup_both_shader(const char *vertex_shader, const char *fragment_shader)
+{
+	releaseObjects();
+	program = setup_shader(vertex_shader, fragment_shader);
+	program2 = setup_shader(vertex_shader, fragment_shader);
+	int sun = add_obj(program, "materials/sun.obj","materials/sun.bmp");
+	int earth = add_obj(program2, "materials/earth.obj","materials/earth.bmp");
+	glEnable(GL_DEPTH_TEST);
+	glCullFace(GL_BACK);
 }
 
 static std::string readfile(const char *filename)
@@ -364,6 +383,7 @@ static void releaseObjects()
 		glDeleteBuffers(4, objects[i].vbo);
 	}
 	glDeleteProgram(program);
+	objects.clear();
 }
 
 static void setUniformMat4(unsigned int program, const std::string &name, const glm::mat4 &mat)
@@ -381,20 +401,20 @@ static void setUniformMat4(unsigned int program, const std::string &name, const 
 
 static void setBothUniformMat4(const std::string &name, const glm::mat4 &mat)
 {
-	setUniformMat4(program, name, mat);
-	setUniformMat4(program2, name, mat);
+	setUniformMat4(::program, name, mat);
+	setUniformMat4(::program2, name, mat);
 }
 
 static void setBothUniformVec3(const std::string &name, const glm::vec3 &vec)
 {
 	GLint loc;
 
-	glUseProgram(program);
-	loc = glGetUniformLocation(program, name.c_str());
+	glUseProgram(::program);
+	loc = glGetUniformLocation(::program, name.c_str());
 	glUniform3f(loc, vec.x, vec.y, vec.z);
 
-	glUseProgram(program2);
-	loc = glGetUniformLocation(program2, name.c_str());
+	glUseProgram(::program2);
+	loc = glGetUniformLocation(::program2, name.c_str());
 	glUniform3f(loc, vec.x, vec.y, vec.z);
 }
 

@@ -10,5 +10,5 @@ uniform sampler2D uSampler;
 void main()
 {
     // sun's texture
-	color = texture(uSampler, fTexcoord);
+	color=texture(uSampler, fTexcoord);
 }
