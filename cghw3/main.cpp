@@ -35,6 +35,7 @@ static int add_obj(unsigned int program, const char *filename,const char *texbmp
 static void releaseObjects();
 static void setUniformMat4(unsigned int program, const std::string &name, const glm::mat4 &mat);
 static void setBothUniformMat4(const std::string &name, const glm::mat4 &mat);
+static void setBothUniformVec3(const std::string &name, const glm::vec3 &vec);
 static void render();
 
 int main(int argc, char *argv[])
@@ -54,7 +55,7 @@ int main(int argc, char *argv[])
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	// create a window with specific size and title
 	int windowWidth = 800, windowHeight = 600;
-	window = glfwCreateWindow(windowWidth, windowHeight, "Computer Graphic HW. 2", NULL, NULL);
+	window = glfwCreateWindow(windowWidth, windowHeight, "Computer Graphic HW. 3", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
@@ -94,8 +95,16 @@ int main(int argc, char *argv[])
 	glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(), glm::vec3(0.f, 1.f, 0.f));
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), ((float)windowWidth/windowHeight), 1.0f, 100.f);
 
+	glm::vec3 lightColor = glm::vec3(1.0f);
+	glm::vec3 lightPos = glm::vec3(0.0f, 10.0f, 10.0f);
+
 	setBothUniformMat4("view", view);
 	setBothUniformMat4("projection", projection);
+	setBothUniformVec3("lightColor", lightColor);
+	setBothUniformVec3("lightPos", lightPos);
+	setBothUniformVec3("cameraPos", cameraPos);
+
+	glProvokingVertex(GL_FIRST_VERTEX_CONVENTION);
 
 	// glm::mat4 tl=glm::translate(glm::mat4(),glm::vec3(15.0f,0.0f,0.0));
 	// glm::mat4 rot;
@@ -119,6 +128,7 @@ int main(int argc, char *argv[])
 		setUniformMat4(program, "model", glm::rotate(glm::mat4(1.f), (float) glm::radians(sunRotationVelocity * delta), glm::vec3(0,1,0)));
 		setUniformMat4(program2, "model",  glm::translate(glm::mat4(),glm::vec3(earthRevolutionRadius * cos(-glm::radians(earthRevolutionVelocity * delta)),0.0f,earthRevolutionRadius * sin(-glm::radians(earthRevolutionVelocity * delta)))) *
 			glm::rotate(glm::mat4(1.f), (float) glm::radians(earthRotationVelocity * delta), glm::vec3(0,1,0)));
+		
 		// draw!!!
 		render();
 		// swap the front and back buffers of the specified window
@@ -128,7 +138,6 @@ int main(int argc, char *argv[])
 		fps++;
 		if(glfwGetTime() - last > 1.0)
 		{
-			std::cout<<(double)fps/(glfwGetTime()-last)<<std::endl;
 			fps = 0;
 			last = glfwGetTime();
 		}
@@ -374,6 +383,19 @@ static void setBothUniformMat4(const std::string &name, const glm::mat4 &mat)
 {
 	setUniformMat4(program, name, mat);
 	setUniformMat4(program2, name, mat);
+}
+
+static void setBothUniformVec3(const std::string &name, const glm::vec3 &vec)
+{
+	GLint loc;
+
+	glUseProgram(program);
+	loc = glGetUniformLocation(program, name.c_str());
+	glUniform3f(loc, vec.x, vec.y, vec.z);
+
+	glUseProgram(program2);
+	loc = glGetUniformLocation(program2, name.c_str());
+	glUniform3f(loc, vec.x, vec.y, vec.z);
 }
 
 static void render()

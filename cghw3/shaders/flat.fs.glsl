@@ -1,14 +1,12 @@
 #version 330
-
-// Default color buffer location is 0
-// If you create framebuffer your own, you need to take care of it
 layout(location=0) out vec4 color;
 
-in vec2 fTexcoord;
 uniform sampler2D uSampler;
+
+in vec2 fTexcoord;
+flat in vec4 resultColor;
 
 void main()
 {
-    // sun's texture
-	color=texture( uSampler,fTexcoord);
+    color = texture(uSampler, fTexcoord) * resultColor;
 }
