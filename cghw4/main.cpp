@@ -22,6 +22,11 @@ struct object_struct{
 	object_struct(): model(glm::mat4(1.0f)){}
 } ;
 
+struct CursorPos
+{
+	double x, y;
+} cursorPos;
+
 std::vector<object_struct> objects;//vertex array object,vertex buffer object and texture(color) for objs
 unsigned int program, program2;
 std::vector<int> indicesCount;//Number of indice of objs
@@ -78,21 +83,7 @@ int main(int argc, char *argv[])
 
 	// load shader program
 	setup_both_shader(readfile("shaders/vs.glsl").c_str(), readfile("shaders/fs.glsl").c_str());
-	// program = setup_shader(readfile("shaders/vs.glsl").c_str(), readfile("shaders/fs.glsl").c_str());
-	// program2 = setup_shader(readfile("shaders/vs.glsl").c_str(), readfile("shaders/fs.glsl").c_str());
 
-	// int sun = add_obj(program, "materials/sun.obj","materials/sun.bmp");
-	// int earth = add_obj(program2, "materials/earth.obj","materials/earth.bmp");
-
-	// GL_DEPTH_TEST: do depth comparisons and update the depth buffer
-	// glEnable(GL_DEPTH_TEST);
-	// cull out back-face
-	// glCullFace(GL_BACK);
-	// Enable blend mode for billboard
-	//glEnable(GL_BLEND);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	// default viewpoint in HW.2
 	glm::vec3 cameraPos = glm::vec3(20.0f);
 	glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(), glm::vec3(0.f, 1.f, 0.f));
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), ((float)windowWidth/windowHeight), 1.0f, 100.f);
@@ -101,10 +92,6 @@ int main(int argc, char *argv[])
 	glm::vec3 lightPos = glm::vec3(0.0f, 10.0f, 10.0f);
 
 	glProvokingVertex(GL_FIRST_VERTEX_CONVENTION);
-
-	// glm::mat4 tl=glm::translate(glm::mat4(),glm::vec3(15.0f,0.0f,0.0));
-	// glm::mat4 rot;
-	// glm::mat4 rev;
 
 	// reference velocity
 	const float constFVelocity = 1000.f;
@@ -121,7 +108,9 @@ int main(int argc, char *argv[])
 	std::cout << "2: Gouraud shading\n";
 	std::cout << "3: Phong shading\n";
 	std::cout << "4: Blinn-phong shading\n";
+	std::cout << "\n";
 	
+	int fps = 0;
 	while (!glfwWindowShouldClose(window))
 	{//program will keep draw here until you close the window
 		float delta = glfwGetTime() - start;
@@ -140,6 +129,16 @@ int main(int argc, char *argv[])
 		glfwSwapBuffers(window);
 		// process events, which is in the event queue, and then returns immediately
 		glfwPollEvents();
+
+		fps++;
+		if (glfwGetTime() - last > 1.0)
+		{
+			glfwGetCursorPos(window, (double *)&cursorPos.x, (double *)&cursorPos.y);
+			std::cout << "fps: " << (double)fps/(glfwGetTime() - last)
+					<< ", cursor: (" << cursorPos.x << ", " << cursorPos.y << ")\n";
+			fps = 0;
+			last = glfwGetTime();
+		}
 	}
 
 	releaseObjects();
@@ -231,7 +230,6 @@ static unsigned int setup_shader(const char *vertex_shader, const char *fragment
 	if(status==GL_FALSE)
 	{
 		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
-
 
 		/* The maxLength includes the NULL character */
 		infoLog = new char[maxLength];
