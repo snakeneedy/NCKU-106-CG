@@ -34,6 +34,7 @@ static unsigned char *load_bmp(const char *bmp, unsigned int *width, unsigned in
 static int add_obj(unsigned int program, const char *filename,const char *texbmp);
 static void releaseObjects();
 static void setUniformMat4(unsigned int program, const std::string &name, const glm::mat4 &mat);
+static void setBothUniformMat4(const std::string &name, const glm::mat4 &mat);
 static void render();
 
 int main(int argc, char *argv[])
@@ -52,7 +53,8 @@ int main(int argc, char *argv[])
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	// create a window with specific size and title
-	window = glfwCreateWindow(800, 600, "Computer Graphic HW. 2", NULL, NULL);
+	int windowWidth = 800, windowHeight = 600;
+	window = glfwCreateWindow(windowWidth, windowHeight, "Computer Graphic HW. 2", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
@@ -88,10 +90,13 @@ int main(int argc, char *argv[])
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// default viewpoint in HW.2
-	setUniformMat4(program, "vp", glm::perspective(glm::radians(45.0f), 640.0f/480, 1.0f, 100.f)*
-			glm::lookAt(glm::vec3(20.0f), glm::vec3(), glm::vec3(0, 1, 0))*glm::mat4(1.0f));
-	setUniformMat4(program2, "vp", glm::perspective(glm::radians(45.0f), 640.0f/480, 1.0f, 100.f)*
-			glm::lookAt(glm::vec3(20.0f), glm::vec3(), glm::vec3(0, 1, 0))*glm::mat4(1.0f));
+	glm::vec3 cameraPos = glm::vec3(20.0f);
+	glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(), glm::vec3(0.f, 1.f, 0.f));
+	glm::mat4 projection = glm::perspective(glm::radians(45.0f), ((float)windowWidth/windowHeight), 1.0f, 100.f);
+
+	setBothUniformMat4("view", view);
+	setBothUniformMat4("projection", projection);
+
 	// glm::mat4 tl=glm::translate(glm::mat4(),glm::vec3(15.0f,0.0f,0.0));
 	// glm::mat4 rot;
 	// glm::mat4 rev;
@@ -365,6 +370,12 @@ static void setUniformMat4(unsigned int program, const std::string &name, const 
 	glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(mat));
 }
 
+static void setBothUniformMat4(const std::string &name, const glm::mat4 &mat)
+{
+	setUniformMat4(program, name, mat);
+	setUniformMat4(program2, name, mat);
+}
+
 static void render()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -378,4 +389,3 @@ static void render()
 	}
 	glBindVertexArray(0);
 }
-
