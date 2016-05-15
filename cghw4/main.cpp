@@ -131,6 +131,7 @@ int main(int argc, char *argv[])
 	std::cout << "2: Gouraud shading\n";
 	std::cout << "3: Phong shading\n";
 	std::cout << "4: Blinn-phong shading\n";
+	std::cout << "B: Blur effect based on Blinn-phong shading\n";
 	std::cout << "\n";
 	
 	int fps = 0;

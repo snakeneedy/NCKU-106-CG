@@ -10,7 +10,7 @@ uniform vec3 lightPos;
 uniform vec3 lightColor;
 uniform sampler2D uSampler;
 
-const float offset = 1.0 / 300.0;
+const float offset = 1.0 / 150.0;
 
 void main()
 {    
@@ -39,9 +39,9 @@ void main()
         vec2( offset, -offset));
 
     float kernel[9] = float[](
-        -1, -1, -1,
-        -1,  9, -1,
-        -1, -1, -1);
+        1, 2, 1,
+        2, 4, 2,
+        1, 2, 1);
 
     vec3 sampleTex[9];
     for (int i = 0; i < 9; i++)
@@ -52,7 +52,7 @@ void main()
     vec3 col;
     for (int i = 0; i < 9; i++)
     {
-        col += sampleTex[i] * kernel[i];
+        col += sampleTex[i] * (kernel[i] / 16.0);
     }
 
     // color = texture(uSampler, fTexcoord) * vec4((ambient + diffuse + specular), 1.0);
