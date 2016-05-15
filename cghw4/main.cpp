@@ -30,6 +30,9 @@ struct CursorPos
 std::vector<object_struct> objects;//vertex array object,vertex buffer object and texture(color) for objs
 unsigned int program, program2;
 std::vector<int> indicesCount;//Number of indice of objs
+GLuint framebufferObj; // framebuffer object
+GLuint textureObj; // texture object
+GLuint renderbufferObj; // renderbuffer object
 
 static void error_callback(int error, const char* description);
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -93,6 +96,26 @@ int main(int argc, char *argv[])
 
 	glProvokingVertex(GL_FIRST_VERTEX_CONVENTION);
 
+	// create a framebuffer
+	// glGenFramebuffers(1, &framebufferObj);
+	// glBindFramebuffer(GL_FRAMEBUFFER, framebufferObj);
+	// glBindFramebuffer(GL_FRAMEBUFFER, 0); // id = 0: default framebuffer
+
+	// creating a texture
+	// int width, height;
+	// glfwGetFramebufferSize(window, &width, &height);
+	// glGenTextures(1, &textureObj);
+	// glBindTexture(GL_TEXTURE_2D, textureObj);
+	// glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// glBindTexture(GL_TEXTURE_2D, 0);  // id = 0: default texture
+	// glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureObj, 0);
+
+	// creating a renderbuffer
+	glGenRenderbuffers(1, &renderbufferObj);
+	glBindRenderbuffer(GL_RENDERBUFFER, renderbufferObj);
+
 	// reference velocity
 	const float constFVelocity = 1000.f;
 	// set velocity (with real-world ratio)
@@ -129,11 +152,11 @@ int main(int argc, char *argv[])
 		glfwSwapBuffers(window);
 		// process events, which is in the event queue, and then returns immediately
 		glfwPollEvents();
+		glfwGetCursorPos(window, (double *)&cursorPos.x, (double *)&cursorPos.y);
 
 		fps++;
 		if (glfwGetTime() - last > 1.0)
 		{
-			glfwGetCursorPos(window, (double *)&cursorPos.x, (double *)&cursorPos.y);
 			std::cout << "fps: " << (double)fps/(glfwGetTime() - last)
 					<< ", cursor: (" << cursorPos.x << ", " << cursorPos.y << ")\n";
 			fps = 0;
@@ -141,6 +164,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	glDeleteFramebuffers(1, &framebufferObj);
 	releaseObjects();
 	glfwDestroyWindow(window);
 	glfwTerminate();
@@ -167,6 +191,8 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 		setup_both_shader(readfile("shaders/phong.vs.glsl").c_str(), readfile("shaders/phong.fs.glsl").c_str());
 	else if (key == GLFW_KEY_4 && action == GLFW_PRESS)
 		setup_both_shader(readfile("shaders/blinn-phong.vs.glsl").c_str(), readfile("shaders/blinn-phong.fs.glsl").c_str());
+	else if (key == GLFW_KEY_B && action == GLFW_PRESS)
+		setup_both_shader(readfile("shaders/blinn-phong.blur.vs.glsl").c_str(), readfile("shaders/blinn-phong.blur.fs.glsl").c_str());
 }
 
 static unsigned int setup_shader(const char *vertex_shader, const char *fragment_shader)
