@@ -33,7 +33,7 @@ std::vector<int> indicesCount;//Number of indice of objs
 GLuint framebufferObj; // framebuffer object
 GLuint textureObj; // texture object
 GLuint renderbufferObj; // renderbuffer object
-glm::vec3 cursorPos;
+glm::vec2 cursorPos;
 glm::vec2 screenSize;
 
 static void error_callback(int error, const char* description);
@@ -184,8 +184,7 @@ int main(int argc, char *argv[])
 		glfwGetCursorPos(window, (double *)&X, (double *)&Y);
 		cursorPos.x = (float)X;
 		cursorPos.y = (float)Y;
-		cursorPos.z = 0.0;
-		setBothUniformVec3("cursorPos", cursorPos);
+		setBothUniformVec2("cursorPos", cursorPos);
 
 		// fps++;
 		// if (glfwGetTime() - last > 1.0)
@@ -459,7 +458,7 @@ static void setUniformMat4(unsigned int program, const std::string &name, const 
 static void setBothUniformMat4(const std::string &name, const glm::mat4 &mat)
 {
 	setUniformMat4(::program, name, mat);
-	setUniformMat4(::program2, name, mat);
+	// setUniformMat4(::program2, name, mat);
 }
 
 static void setBothUniformVec3(const std::string &name, const glm::vec3 &vec)
@@ -470,9 +469,9 @@ static void setBothUniformVec3(const std::string &name, const glm::vec3 &vec)
 	loc = glGetUniformLocation(::program, name.c_str());
 	glUniform3f(loc, vec.x, vec.y, vec.z);
 
-	glUseProgram(::program2);
-	loc = glGetUniformLocation(::program2, name.c_str());
-	glUniform3f(loc, vec.x, vec.y, vec.z);
+	// glUseProgram(::program2);
+	// loc = glGetUniformLocation(::program2, name.c_str());
+	// glUniform3f(loc, vec.x, vec.y, vec.z);
 }
 
 static void setBothUniformVec2(const std::string &name, const glm::vec2 &vec)
@@ -483,9 +482,9 @@ static void setBothUniformVec2(const std::string &name, const glm::vec2 &vec)
 	loc = glGetUniformLocation(::program, name.c_str());
 	glUniform2f(loc, vec.x, vec.y);
 
-	glUseProgram(::program2);
-	loc = glGetUniformLocation(::program2, name.c_str());
-	glUniform2f(loc, vec.x, vec.y);
+	// glUseProgram(::program2);
+	// loc = glGetUniformLocation(::program2, name.c_str());
+	// glUniform2f(loc, vec.x, vec.y);
 }
 
 static void render()

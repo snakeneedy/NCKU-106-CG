@@ -9,7 +9,7 @@ uniform vec3 cameraPos;
 uniform vec3 lightPos;
 uniform vec3 lightColor;
 uniform sampler2D uSampler;
-uniform vec3 cursorPos;
+uniform vec2 cursorPos;
 uniform vec2 screenSize;
 
 const float radius = 50.0;
@@ -18,6 +18,8 @@ const float zoom = 0.5;
 
 void main()
 {
+    float d = sqrt(pow(gl_FragCoord.x - cursorPos.x, 2.0) + pow(screenSize.y - gl_FragCoord.y - cursorPos.y, 2.0));
+
     // ambient
     float ambientStrength = 0.2;
     vec3 ambient = ambientStrength * lightColor;
@@ -31,7 +33,6 @@ void main()
     // vec3 reflectDir = reflect(-lightDir, fNormal);
     vec3 specular = specularStrength * pow(max(dot(fNormal, halfDir), 0.0), 4) * lightColor;
     
-    float d = sqrt(pow(gl_FragCoord.x - cursorPos.x, 2.0) + pow(screenSize.y - gl_FragCoord.y - cursorPos.y, 2.0));
     if (d > radius)
     {
         // result
