@@ -9,11 +9,15 @@ uniform vec3 cameraPos;
 uniform vec3 lightPos;
 uniform vec3 lightColor;
 uniform sampler2D uSampler;
+uniform vec3 cursorPos;
+uniform vec2 screenSize;
 
+const float radius = 50.0;
 const float offset = 1.0 / 150.0;
+const float zoom = 0.5;
 
 void main()
-{    
+{
     // ambient
     float ambientStrength = 0.2;
     vec3 ambient = ambientStrength * lightColor;
@@ -27,36 +31,45 @@ void main()
     // vec3 reflectDir = reflect(-lightDir, fNormal);
     vec3 specular = specularStrength * pow(max(dot(fNormal, halfDir), 0.0), 4) * lightColor;
     
-    vec2 offsets[9] = vec2[](
-        vec2(-offset,  offset),
-        vec2(    0.0,  offset),
-        vec2( offset,  offset),
-        vec2(-offset,     0.0),
-        vec2(    0.0,     0.0),
-        vec2( offset,     0.0),
-        vec2(-offset, -offset),
-        vec2(    0.0, -offset),
-        vec2( offset, -offset));
-
-    float kernel[9] = float[](
-        1, 2, 1,
-        2, 4, 2,
-        1, 2, 1);
-
-    vec3 sampleTex[9];
-    for (int i = 0; i < 9; i++)
+    float d = sqrt(pow(gl_FragCoord.x - cursorPos.x, 2.0) + pow(screenSize.y - gl_FragCoord.y - cursorPos.y, 2.0));
+    if (d > radius)
     {
-        sampleTex[i] = vec3(texture(uSampler, fTexcoord + offsets[i]));
+        // result
+        color = texture(uSampler, fTexcoord) * vec4((ambient + diffuse + specular), 1.0);
     }
-
-    vec3 col;
-    for (int i = 0; i < 9; i++)
+    else
     {
-        col += sampleTex[i] * (kernel[i] / 16.0);
-    }
+        // blur
+        vec2 offsets[9] = vec2[](
+            vec2(-offset,  offset),
+            vec2(    0.0,  offset),
+            vec2( offset,  offset),
+            vec2(-offset,     0.0),
+            vec2(    0.0,     0.0),
+            vec2( offset,     0.0),
+            vec2(-offset, -offset),
+            vec2(    0.0, -offset),
+            vec2( offset, -offset));
 
-    // color = texture(uSampler, fTexcoord) * vec4((ambient + diffuse + specular), 1.0);
-    color = vec4(col, 1.0) * vec4((ambient + diffuse + specular), 1.0);
-    // color = vec4(col, 1.0);
+        float kernel[9] = float[](
+            1, 2, 1,
+            2, 4, 2,
+            1, 2, 1);
+
+        vec3 sampleTex[9];
+        for (int i = 0; i < 9; i++)
+        {
+            sampleTex[i] = vec3(texture(uSampler, fTexcoord + offsets[i]));
+        }
+
+        vec3 col;
+        for (int i = 0; i < 9; i++)
+        {
+            col += sampleTex[i] * (kernel[i] / 16.0);
+        }
+
+        // blur result
+        color = vec4(col, 1.0) * vec4((ambient + diffuse + specular), 1.0);
+    }
 }
 

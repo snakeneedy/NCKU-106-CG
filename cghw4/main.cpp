@@ -22,10 +22,10 @@ struct object_struct{
 	object_struct(): model(glm::mat4(1.0f)){}
 } ;
 
-struct CursorPos
-{
-	double x, y;
-} cursorPos;
+// struct CursorPos
+// {
+// 	double x, y;
+// } cursorPos;
 
 std::vector<object_struct> objects;//vertex array object,vertex buffer object and texture(color) for objs
 unsigned int program, program2;
@@ -33,6 +33,8 @@ std::vector<int> indicesCount;//Number of indice of objs
 GLuint framebufferObj; // framebuffer object
 GLuint textureObj; // texture object
 GLuint renderbufferObj; // renderbuffer object
+glm::vec3 cursorPos;
+glm::vec2 screenSize;
 
 static void error_callback(int error, const char* description);
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -45,6 +47,7 @@ static void releaseObjects();
 static void setUniformMat4(unsigned int program, const std::string &name, const glm::mat4 &mat);
 static void setBothUniformMat4(const std::string &name, const glm::mat4 &mat);
 static void setBothUniformVec3(const std::string &name, const glm::vec3 &vec);
+static void setBothUniformVec2(const std::string &name, const glm::vec2 &vec);
 static void render();
 
 int main(int argc, char *argv[])
@@ -63,8 +66,8 @@ int main(int argc, char *argv[])
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	// create a window with specific size and title
-	int windowWidth = 800, windowHeight = 600;
-	window = glfwCreateWindow(windowWidth, windowHeight, "Computer Graphic HW. 4", NULL, NULL);
+	screenSize.x = 800, screenSize.y = 600;
+	window = glfwCreateWindow(screenSize.x, screenSize.y, "Computer Graphic HW. 4", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
@@ -85,36 +88,49 @@ int main(int argc, char *argv[])
 	glfwSetKeyCallback(window, key_callback);
 
 	// load shader program
-	setup_both_shader(readfile("shaders/vs.glsl").c_str(), readfile("shaders/fs.glsl").c_str());
+	setup_both_shader(readfile("shaders/blinn-phong.blur.vs.glsl").c_str(), readfile("shaders/blinn-phong.blur.fs.glsl").c_str());
 
 	glm::vec3 cameraPos = glm::vec3(20.0f);
+	// cameraPos = glm::vec3(0.8f) * cameraPos;
 	glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(), glm::vec3(0.f, 1.f, 0.f));
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), ((float)windowWidth/windowHeight), 1.0f, 100.f);
+	glm::mat4 projection = glm::perspective(glm::radians(45.0f), ((float)screenSize.x/screenSize.y), 1.0f, 100.f);
 
 	glm::vec3 lightColor = glm::vec3(1.0f);
 	glm::vec3 lightPos = glm::vec3(0.0f, 10.0f, 10.0f);
 
 	glProvokingVertex(GL_FIRST_VERTEX_CONVENTION);
 
-	// create a framebuffer
+	// // create a framebuffer
 	// glGenFramebuffers(1, &framebufferObj);
 	// glBindFramebuffer(GL_FRAMEBUFFER, framebufferObj);
-	// glBindFramebuffer(GL_FRAMEBUFFER, 0); // id = 0: default framebuffer
+	// // glBindFramebuffer(GL_FRAMEBUFFER, 0); // id = 0: default framebuffer
 
-	// creating a texture
 	// int width, height;
 	// glfwGetFramebufferSize(window, &width, &height);
+	// std::cout << width << "x" << height << "\n";
+
+	// // creating a texture
 	// glGenTextures(1, &textureObj);
 	// glBindTexture(GL_TEXTURE_2D, textureObj);
 	// glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	// glBindTexture(GL_TEXTURE_2D, 0);  // id = 0: default texture
+	// glBindTexture(GL_TEXTURE_2D, 0); // id = 0: default texture
 	// glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureObj, 0);
 
-	// creating a renderbuffer
-	glGenRenderbuffers(1, &renderbufferObj);
-	glBindRenderbuffer(GL_RENDERBUFFER, renderbufferObj);
+	// // creating a renderbuffer
+	// glGenRenderbuffers(1, &renderbufferObj);
+	// glBindRenderbuffer(GL_RENDERBUFFER, renderbufferObj);
+	// glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width/2.0, height/2.0);
+	// glBindRenderbuffer(GL_RENDERBUFFER, 0); // id = 0: default renderbuffer
+	// glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderbufferObj);
+
+	// glBindFramebuffer(GL_FRAMEBUFFER, 0); // id = 0: default framebuffer
+
+
+	// if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	// 	std::cout << "glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE.\n";
+
 
 	// reference velocity
 	const float constFVelocity = 1000.f;
@@ -126,13 +142,13 @@ int main(int argc, char *argv[])
 	float last, start;
 	last = start = glfwGetTime();
 
-	std::cout << "0: HW2 shading (default)\n";
-	std::cout << "1: Flat shading\n";
-	std::cout << "2: Gouraud shading\n";
-	std::cout << "3: Phong shading\n";
-	std::cout << "4: Blinn-phong shading\n";
-	std::cout << "B: Blur effect based on Blinn-phong shading\n";
-	std::cout << "\n";
+	// std::cout << "0: HW2 shading (default)\n";
+	// std::cout << "1: Flat shading\n";
+	// std::cout << "2: Gouraud shading\n";
+	// std::cout << "3: Phong shading\n";
+	// std::cout << "4: Blinn-phong shading\n";
+	// std::cout << "B: Blur effect based on Blinn-phong shading\n";
+	// std::cout << "\n";
 	
 	int fps = 0;
 	while (!glfwWindowShouldClose(window))
@@ -147,22 +163,38 @@ int main(int argc, char *argv[])
 		setBothUniformVec3("lightColor", lightColor);
 		setBothUniformVec3("lightPos", lightPos);
 		setBothUniformVec3("cameraPos", cameraPos);
-		// draw!!!
+
+		// glBindFramebuffer(GL_FRAMEBUFFER, framebufferObj);
+		// glClearColor(1.0f,1.0f,1.0f,1.0f);
+		// glEnable(GL_DEPTH_TEST);
+
 		render();
+
+		// glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		// glClearColor(1.0f,1.0f,1.0f,1.0f);
+		// glClear(GL_COLOR_BUFFER_BIT);
+
 		// swap the front and back buffers of the specified window
 		glfwSwapBuffers(window);
 		// process events, which is in the event queue, and then returns immediately
 		glfwPollEvents();
-		glfwGetCursorPos(window, (double *)&cursorPos.x, (double *)&cursorPos.y);
 
-		fps++;
-		if (glfwGetTime() - last > 1.0)
-		{
-			std::cout << "fps: " << (double)fps/(glfwGetTime() - last)
-					<< ", cursor: (" << cursorPos.x << ", " << cursorPos.y << ")\n";
-			fps = 0;
-			last = glfwGetTime();
-		}
+		setBothUniformVec2("screenSize", screenSize);
+		double X, Y;
+		glfwGetCursorPos(window, (double *)&X, (double *)&Y);
+		cursorPos.x = (float)X;
+		cursorPos.y = (float)Y;
+		cursorPos.z = 0.0;
+		setBothUniformVec3("cursorPos", cursorPos);
+
+		// fps++;
+		// if (glfwGetTime() - last > 1.0)
+		// {
+		// 	std::cout << "fps: " << (double)fps/(glfwGetTime() - last)
+		// 			<< ", cursor: (" << cursorPos.x << ", " << cursorPos.y << ")\n";
+		// 	fps = 0;
+		// 	last = glfwGetTime();
+		// }
 	}
 
 	glDeleteFramebuffers(1, &framebufferObj);
@@ -182,18 +214,18 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
-	else if (key == GLFW_KEY_0 && action == GLFW_PRESS)
-		setup_both_shader(readfile("shaders/vs.glsl").c_str(), readfile("shaders/fs.glsl").c_str());
-	else if (key == GLFW_KEY_1 && action == GLFW_PRESS)
-		setup_both_shader(readfile("shaders/flat.vs.glsl").c_str(), readfile("shaders/flat.fs.glsl").c_str());
-	else if (key == GLFW_KEY_2 && action == GLFW_PRESS)
-		setup_both_shader(readfile("shaders/gouraud.vs.glsl").c_str(), readfile("shaders/gouraud.fs.glsl").c_str());
-	else if (key == GLFW_KEY_3 && action == GLFW_PRESS)
-		setup_both_shader(readfile("shaders/phong.vs.glsl").c_str(), readfile("shaders/phong.fs.glsl").c_str());
-	else if (key == GLFW_KEY_4 && action == GLFW_PRESS)
-		setup_both_shader(readfile("shaders/blinn-phong.vs.glsl").c_str(), readfile("shaders/blinn-phong.fs.glsl").c_str());
-	else if (key == GLFW_KEY_B && action == GLFW_PRESS)
-		setup_both_shader(readfile("shaders/blinn-phong.blur.vs.glsl").c_str(), readfile("shaders/blinn-phong.blur.fs.glsl").c_str());
+	// else if (key == GLFW_KEY_0 && action == GLFW_PRESS)
+	// 	setup_both_shader(readfile("shaders/vs.glsl").c_str(), readfile("shaders/fs.glsl").c_str());
+	// else if (key == GLFW_KEY_1 && action == GLFW_PRESS)
+	// 	setup_both_shader(readfile("shaders/flat.vs.glsl").c_str(), readfile("shaders/flat.fs.glsl").c_str());
+	// else if (key == GLFW_KEY_2 && action == GLFW_PRESS)
+	// 	setup_both_shader(readfile("shaders/gouraud.vs.glsl").c_str(), readfile("shaders/gouraud.fs.glsl").c_str());
+	// else if (key == GLFW_KEY_3 && action == GLFW_PRESS)
+	// 	setup_both_shader(readfile("shaders/phong.vs.glsl").c_str(), readfile("shaders/phong.fs.glsl").c_str());
+	// else if (key == GLFW_KEY_4 && action == GLFW_PRESS)
+	// 	setup_both_shader(readfile("shaders/blinn-phong.vs.glsl").c_str(), readfile("shaders/blinn-phong.fs.glsl").c_str());
+	// else if (key == GLFW_KEY_B && action == GLFW_PRESS)
+	// 	setup_both_shader(readfile("shaders/blinn-phong.blur.vs.glsl").c_str(), readfile("shaders/blinn-phong.blur.fs.glsl").c_str());
 }
 
 static unsigned int setup_shader(const char *vertex_shader, const char *fragment_shader)
@@ -441,6 +473,19 @@ static void setBothUniformVec3(const std::string &name, const glm::vec3 &vec)
 	glUseProgram(::program2);
 	loc = glGetUniformLocation(::program2, name.c_str());
 	glUniform3f(loc, vec.x, vec.y, vec.z);
+}
+
+static void setBothUniformVec2(const std::string &name, const glm::vec2 &vec)
+{
+	GLint loc;
+
+	glUseProgram(::program);
+	loc = glGetUniformLocation(::program, name.c_str());
+	glUniform2f(loc, vec.x, vec.y);
+
+	glUseProgram(::program2);
+	loc = glGetUniformLocation(::program2, name.c_str());
+	glUniform2f(loc, vec.x, vec.y);
 }
 
 static void render()
