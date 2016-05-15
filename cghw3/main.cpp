@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 	glfwSetKeyCallback(window, key_callback);
 
 	// load shader program
-	setup_both_shader(readfile("shaders/vs.glsl").c_str(), readfile("shaders/fs.glsl").c_str());
+	setup_both_shader(readfile("shaders/flat.vs.glsl").c_str(), readfile("shaders/flat.fs.glsl").c_str());
 	// program = setup_shader(readfile("shaders/vs.glsl").c_str(), readfile("shaders/fs.glsl").c_str());
 	// program2 = setup_shader(readfile("shaders/vs.glsl").c_str(), readfile("shaders/fs.glsl").c_str());
 
@@ -116,8 +116,8 @@ int main(int argc, char *argv[])
 	float last, start;
 	last = start = glfwGetTime();
 
-	std::cout << "0: HW2 shading (default)\n";
-	std::cout << "1: Flat shading\n";
+	std::cout << "0: HW2 shading\n";
+	std::cout << "1: Flat shading (default)\n";
 	std::cout << "2: Gouraud shading\n";
 	std::cout << "3: Phong shading\n";
 	std::cout << "4: Blinn-phong shading\n";
