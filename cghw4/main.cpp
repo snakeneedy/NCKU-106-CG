@@ -35,9 +35,11 @@ GLuint textureObj; // texture object
 GLuint renderbufferObj; // renderbuffer object
 glm::vec2 cursorPos;
 glm::vec2 screenSize;
+GLint zoomLevel;
 
 static void error_callback(int error, const char* description);
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 static unsigned int setup_shader(const char *vertex_shader, const char *fragment_shader);
 void setup_both_shader(const char *vertex_shader, const char *fragment_shader);
 static std::string readfile(const char *filename);
@@ -86,6 +88,7 @@ int main(int argc, char *argv[])
 
 	// Setup input callback
 	glfwSetKeyCallback(window, key_callback);
+	glfwSetMouseButtonCallback(window, mouse_button_callback);
 
 	// load shader program
 	setup_both_shader(readfile("shaders/blinn-phong.vs.glsl").c_str(), readfile("shaders/blinn-phong.fs.glsl").c_str());
@@ -155,9 +158,11 @@ int main(int argc, char *argv[])
 			sunRotationVelocity = constFVelocity / 24.47f;
 	float last, start;
 	last = start = glfwGetTime();
+	zoomLevel = 1;
 
-	std::cout << "0: HW2 shading (default)\n";
-	std::cout << "1: Flat shading\n";
+
+	std::cout << "0: HW2 shading\n";
+	std::cout << "1: Flat shading (default)\n";
 	std::cout << "2: Gouraud shading\n";
 	std::cout << "3: Phong shading\n";
 	std::cout << "4: Blinn-phong shading\n";
@@ -222,6 +227,8 @@ int main(int argc, char *argv[])
 		glUniform2f(loc, cursorPos.x, cursorPos.y);
 		loc = glGetUniformLocation(programZoom, "screenSize");
 		glUniform2f(loc, screenSize.x, screenSize.y);
+		loc = glGetUniformLocation(programZoom, "zoomLevel");
+		glUniform1i(loc, zoomLevel);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
 
@@ -254,6 +261,16 @@ static void error_callback(int error, const char* description)
 {
 	fputs(description, stderr);
 }
+
+static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+	{
+		zoomLevel = (zoomLevel + 1) % 4;
+		zoomLevel = zoomLevel < 1 ? 1 : zoomLevel;
+	}
+}
+
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)

@@ -5,10 +5,11 @@ out vec4 color;
 uniform sampler2D uSampler;
 uniform vec2 cursorPos;
 uniform vec2 screenSize;
+uniform int zoomLevel;
 
 const float radius = 50.0;
 const float offset = 1.0 / 150.0;
-const float zoom = 0.5;
+// const float zoom = 0.25;
 
 // float distanceOf (vec2 A, vec2 B)
 // {
@@ -16,7 +17,9 @@ const float zoom = 0.5;
 // }
 
 void main()
-{ 
+{
+    float fZoomLevel = zoomLevel;
+    
     float d = sqrt(pow(gl_FragCoord.x - cursorPos.x, 2.0) + pow(screenSize.y - gl_FragCoord.y - cursorPos.y, 2.0));
     if (d > radius)
     {
@@ -26,20 +29,13 @@ void main()
     }
     else
     {
+        float zoom = 1.0 / float(zoomLevel);
         vec2 _cursorPos;
         _cursorPos.x = cursorPos.x / screenSize.x;
         _cursorPos.y = cursorPos.y / screenSize.y;
         _cursorPos.y = 1.0 - _cursorPos.y;
         // zoom
-        vec2 _fTexcoord = (_cursorPos + fTexcoord) * zoom;
-        // vec2 cursorCoord;
-        // cursorCoord.x = cursorPos.x / screenSize.x;
-        // cursorCoord.y = cursorPos.y / screenSize.y;
-        // // float dist = distanceOf(cursorPos, fTexcoord);
-        // // float newRadius = dist * (dist / radius);
-
-        // _fTexcoord.x = cursorCoord.x + (fTexcoord.x - cursorCoord.x) * zoom;
-        // _fTexcoord.y = cursorCoord.y + (fTexcoord.y - cursorCoord.y) * zoom;
+        vec2 _fTexcoord = _cursorPos + (fTexcoord - _cursorPos) * zoom;
 
 
         // blur
