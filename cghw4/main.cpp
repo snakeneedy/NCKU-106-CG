@@ -156,13 +156,12 @@ int main(int argc, char *argv[])
 	float last, start;
 	last = start = glfwGetTime();
 
-	// std::cout << "0: HW2 shading (default)\n";
-	// std::cout << "1: Flat shading\n";
-	// std::cout << "2: Gouraud shading\n";
-	// std::cout << "3: Phong shading\n";
-	// std::cout << "4: Blinn-phong shading\n";
-	// std::cout << "B: Blur effect based on Blinn-phong shading\n";
-	// std::cout << "\n";
+	std::cout << "0: HW2 shading (default)\n";
+	std::cout << "1: Flat shading\n";
+	std::cout << "2: Gouraud shading\n";
+	std::cout << "3: Phong shading\n";
+	std::cout << "4: Blinn-phong shading\n";
+	std::cout << "\n";
 	
 	int fps = 0;
 	while (!glfwWindowShouldClose(window))
@@ -259,18 +258,16 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
-	// else if (key == GLFW_KEY_0 && action == GLFW_PRESS)
-	// 	setup_both_shader(readfile("shaders/vs.glsl").c_str(), readfile("shaders/fs.glsl").c_str());
-	// else if (key == GLFW_KEY_1 && action == GLFW_PRESS)
-	// 	setup_both_shader(readfile("shaders/flat.vs.glsl").c_str(), readfile("shaders/flat.fs.glsl").c_str());
-	// else if (key == GLFW_KEY_2 && action == GLFW_PRESS)
-	// 	setup_both_shader(readfile("shaders/gouraud.vs.glsl").c_str(), readfile("shaders/gouraud.fs.glsl").c_str());
-	// else if (key == GLFW_KEY_3 && action == GLFW_PRESS)
-	// 	setup_both_shader(readfile("shaders/phong.vs.glsl").c_str(), readfile("shaders/phong.fs.glsl").c_str());
-	// else if (key == GLFW_KEY_4 && action == GLFW_PRESS)
-	// 	setup_both_shader(readfile("shaders/blinn-phong.vs.glsl").c_str(), readfile("shaders/blinn-phong.fs.glsl").c_str());
-	// else if (key == GLFW_KEY_B && action == GLFW_PRESS)
-	// 	setup_both_shader(readfile("shaders/blinn-phong.blur.vs.glsl").c_str(), readfile("shaders/blinn-phong.blur.fs.glsl").c_str());
+	else if (key == GLFW_KEY_0 && action == GLFW_PRESS)
+		setup_both_shader(readfile("shaders/vs.glsl").c_str(), readfile("shaders/fs.glsl").c_str());
+	else if (key == GLFW_KEY_1 && action == GLFW_PRESS)
+		setup_both_shader(readfile("shaders/flat.vs.glsl").c_str(), readfile("shaders/flat.fs.glsl").c_str());
+	else if (key == GLFW_KEY_2 && action == GLFW_PRESS)
+		setup_both_shader(readfile("shaders/gouraud.vs.glsl").c_str(), readfile("shaders/gouraud.fs.glsl").c_str());
+	else if (key == GLFW_KEY_3 && action == GLFW_PRESS)
+		setup_both_shader(readfile("shaders/phong.vs.glsl").c_str(), readfile("shaders/phong.fs.glsl").c_str());
+	else if (key == GLFW_KEY_4 && action == GLFW_PRESS)
+		setup_both_shader(readfile("shaders/blinn-phong.vs.glsl").c_str(), readfile("shaders/blinn-phong.fs.glsl").c_str());
 }
 
 static unsigned int setup_shader(const char *vertex_shader, const char *fragment_shader)
@@ -504,7 +501,7 @@ static void setUniformMat4(unsigned int program, const std::string &name, const 
 static void setBothUniformMat4(const std::string &name, const glm::mat4 &mat)
 {
 	setUniformMat4(::program, name, mat);
-	// setUniformMat4(::program2, name, mat);
+	setUniformMat4(::program2, name, mat);
 }
 
 static void setBothUniformVec3(const std::string &name, const glm::vec3 &vec)
@@ -515,9 +512,9 @@ static void setBothUniformVec3(const std::string &name, const glm::vec3 &vec)
 	loc = glGetUniformLocation(::program, name.c_str());
 	glUniform3f(loc, vec.x, vec.y, vec.z);
 
-	// glUseProgram(::program2);
-	// loc = glGetUniformLocation(::program2, name.c_str());
-	// glUniform3f(loc, vec.x, vec.y, vec.z);
+	glUseProgram(::program2);
+	loc = glGetUniformLocation(::program2, name.c_str());
+	glUniform3f(loc, vec.x, vec.y, vec.z);
 }
 
 static void setBothUniformVec2(const std::string &name, const glm::vec2 &vec)
@@ -528,9 +525,9 @@ static void setBothUniformVec2(const std::string &name, const glm::vec2 &vec)
 	loc = glGetUniformLocation(::program, name.c_str());
 	glUniform2f(loc, vec.x, vec.y);
 
-	// glUseProgram(::program2);
-	// loc = glGetUniformLocation(::program2, name.c_str());
-	// glUniform2f(loc, vec.x, vec.y);
+	glUseProgram(::program2);
+	loc = glGetUniformLocation(::program2, name.c_str());
+	glUniform2f(loc, vec.x, vec.y);
 }
 
 static void render()
