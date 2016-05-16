@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 	glfwSetKeyCallback(window, key_callback);
 
 	// load shader program
-	setup_both_shader(readfile("shaders/blinn-phong.blur.vs.glsl").c_str(), readfile("shaders/blinn-phong.blur.fs.glsl").c_str());
+	setup_both_shader(readfile("shaders/blinn-phong.vs.glsl").c_str(), readfile("shaders/blinn-phong.fs.glsl").c_str());
 	programZoom = setup_shader(readfile("shaders/zoom.vs.glsl").c_str(), readfile("shaders/zoom.fs.glsl").c_str());
 
 	glm::vec3 cameraPos = glm::vec3(20.0f);
@@ -144,9 +144,7 @@ int main(int argc, char *argv[])
         -1.0f,  1.0f,  0.0f, 1.0f,
          1.0f, -1.0f,  1.0f, 0.0f,
          1.0f,  1.0f,  1.0f, 1.0f
-    };  
-          
-	
+    };
 
 	// reference velocity
 	const float constFVelocity = 1000.f;
@@ -180,16 +178,32 @@ int main(int argc, char *argv[])
 		setBothUniformVec3("lightPos", lightPos);
 		setBothUniformVec3("cameraPos", cameraPos);
 
+		// setBothUniformVec2("screenSize", screenSize);
+		// double X, Y;
+		// glfwGetCursorPos(window, (double *)&X, (double *)&Y);
+		// cursorPos.x = (float)X;
+		// cursorPos.y = (float)Y;
+		// setBothUniformVec2("cursorPos", cursorPos);
+
 		glBindFramebuffer(GL_FRAMEBUFFER, framebufferObj);
 		glClearColor(0.0f,0.0f,0.0f,1.0f);
 		glEnable(GL_DEPTH_TEST);
 
 		render();
 
+		// post processing
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClearColor(1.0f,1.0f,1.0f,1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+		
 		glUseProgram(programZoom);
+		GLuint loc;
+		double X, Y;
+		glfwGetCursorPos(window, (double *)&X, (double *)&Y);
+		cursorPos.x = (float)X;
+		cursorPos.y = (float)Y;
+		
+
 		// Setup screen VAO
 		GLuint quadVAO, quadVBO;
 		glGenVertexArrays(1, &quadVAO);
@@ -205,6 +219,10 @@ int main(int argc, char *argv[])
 		glBindVertexArray(quadVAO);
 		glDisable(GL_DEPTH_TEST);
 		glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+		loc = glGetUniformLocation(programZoom, "cursorPos");
+		glUniform2f(loc, cursorPos.x, cursorPos.y);
+		loc = glGetUniformLocation(programZoom, "screenSize");
+		glUniform2f(loc, screenSize.x, screenSize.y);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
 
@@ -213,12 +231,6 @@ int main(int argc, char *argv[])
 		// process events, which is in the event queue, and then returns immediately
 		glfwPollEvents();
 
-		setBothUniformVec2("screenSize", screenSize);
-		double X, Y;
-		glfwGetCursorPos(window, (double *)&X, (double *)&Y);
-		cursorPos.x = (float)X;
-		cursorPos.y = (float)Y;
-		setBothUniformVec2("cursorPos", cursorPos);
 
 		// fps++;
 		// if (glfwGetTime() - last > 1.0)
