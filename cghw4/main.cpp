@@ -36,10 +36,12 @@ GLuint renderbufferObj; // renderbuffer object
 glm::vec2 cursorPos;
 glm::vec2 screenSize;
 GLint zoomLevel;
+float sigma = 0.5;
 
 static void error_callback(int error, const char* description);
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 static unsigned int setup_shader(const char *vertex_shader, const char *fragment_shader);
 void setup_both_shader(const char *vertex_shader, const char *fragment_shader);
 static std::string readfile(const char *filename);
@@ -89,6 +91,7 @@ int main(int argc, char *argv[])
 	// Setup input callback
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
+	glfwSetScrollCallback(window, scroll_callback);
 
 	// load shader program
 	setup_both_shader(readfile("shaders/blinn-phong.vs.glsl").c_str(), readfile("shaders/blinn-phong.fs.glsl").c_str());
@@ -172,6 +175,26 @@ int main(int argc, char *argv[])
 	while (!glfwWindowShouldClose(window))
 	{//program will keep draw here until you close the window
 		float delta = glfwGetTime() - start;
+		glm::mat3 gauss;
+        float pi = 3.1415926;
+        // calculate gauss
+        float gaussSum = 0.0;
+        for (int i = 0; i <= 2; i++)
+        {
+            int y = 1 - i;
+            for (int j = 0; j <= 2; j++)
+            {
+                int x = j - 1;
+                double times = -(x*x + y*y) / (2 * sigma * sigma);
+                gauss[i][j] = exp(times) /  (2 * pi * sigma * sigma);
+                gaussSum += gauss[i][j];
+            }
+        }
+        // for (int i = 0; i < 3; ++i)
+        //  	for (int j = 0; j < 3; ++j)
+        //      	gauss[i][j] /= gaussSum;
+
+
 		// send model's translation and rotation to sl.
 		setUniformMat4(::program, "model", glm::rotate(glm::mat4(1.f), (float) glm::radians(sunRotationVelocity * delta), glm::vec3(0,1,0)));
 		setUniformMat4(::program2, "model",  glm::translate(glm::mat4(),glm::vec3(earthRevolutionRadius * cos(-glm::radians(earthRevolutionVelocity * delta)),0.0f,earthRevolutionRadius * sin(-glm::radians(earthRevolutionVelocity * delta)))) *
@@ -229,6 +252,8 @@ int main(int argc, char *argv[])
 		glUniform2f(loc, screenSize.x, screenSize.y);
 		loc = glGetUniformLocation(programZoom, "zoomLevel");
 		glUniform1i(loc, zoomLevel);
+		loc = glGetUniformLocation(programZoom, "gauss");
+		glUniformMatrix3fv(loc, 1, GL_FALSE, glm::value_ptr(gauss));
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
 
@@ -262,15 +287,6 @@ static void error_callback(int error, const char* description)
 	fputs(description, stderr);
 }
 
-static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
-{
-	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-	{
-		zoomLevel = (zoomLevel + 1) % 4;
-		zoomLevel = zoomLevel < 1 ? 1 : zoomLevel;
-	}
-}
-
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
@@ -285,6 +301,23 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 		setup_both_shader(readfile("shaders/phong.vs.glsl").c_str(), readfile("shaders/phong.fs.glsl").c_str());
 	else if (key == GLFW_KEY_4 && action == GLFW_PRESS)
 		setup_both_shader(readfile("shaders/blinn-phong.vs.glsl").c_str(), readfile("shaders/blinn-phong.fs.glsl").c_str());
+}
+static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+	{
+		zoomLevel = (zoomLevel + 1) % 4;
+		zoomLevel = zoomLevel < 1 ? 1 : zoomLevel;
+	}
+}
+
+static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	sigma += yoffset * 0.1;
+	if (sigma < -1.0)
+		sigma = -1.0;
+	else if (sigma > 1.0)
+		sigma = 1.0;
 }
 
 static unsigned int setup_shader(const char *vertex_shader, const char *fragment_shader)

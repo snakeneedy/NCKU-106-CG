@@ -6,6 +6,7 @@ uniform sampler2D uSampler;
 uniform vec2 cursorPos;
 uniform vec2 screenSize;
 uniform int zoomLevel;
+uniform mat3 gauss;
 
 const float radius = 50.0;
 const float offset = 1.0 / 150.0;
@@ -50,10 +51,18 @@ void main()
             vec2(    0.0, -offset),
             vec2( offset, -offset));
 
+        // float kernel[9] = float[](
+        //     1, 2, 1,
+        //     2, 4, 2,
+        //     1, 2, 1);
         float kernel[9] = float[](
-            1, 2, 1,
-            2, 4, 2,
-            1, 2, 1);
+            gauss[0][0], gauss[0][1], gauss[0][2],
+            gauss[1][0], gauss[1][1], gauss[1][2],
+            gauss[2][0], gauss[2][1], gauss[2][2]);
+        float kernelSum = 0.0;
+        for (int i = 0; i < 9; i++)
+            kernelSum += kernel[i];
+
 
         vec3 sampleTex[9];
         for (int i = 0; i < 9; i++)
@@ -64,7 +73,8 @@ void main()
         vec3 col;
         for (int i = 0; i < 9; i++)
         {
-            col += sampleTex[i] * (kernel[i] / 16.0);
+            // col += sampleTex[i] * (kernel[i] / 16.0);
+            col += sampleTex[i] * (kernel[i] / kernelSum);
         }
 
         // blur result
