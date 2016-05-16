@@ -28,7 +28,7 @@ struct object_struct{
 // } cursorPos;
 
 std::vector<object_struct> objects;//vertex array object,vertex buffer object and texture(color) for objs
-unsigned int program, program2;
+unsigned int program, program2, programZoom;
 std::vector<int> indicesCount;//Number of indice of objs
 GLuint framebufferObj; // framebuffer object
 GLuint textureObj; // texture object
@@ -89,6 +89,7 @@ int main(int argc, char *argv[])
 
 	// load shader program
 	setup_both_shader(readfile("shaders/blinn-phong.blur.vs.glsl").c_str(), readfile("shaders/blinn-phong.blur.fs.glsl").c_str());
+	programZoom = setup_shader(readfile("shaders/zoom.vs.glsl").c_str(), readfile("shaders/zoom.fs.glsl").c_str());
 
 	glm::vec3 cameraPos = glm::vec3(20.0f);
 	// cameraPos = glm::vec3(0.8f) * cameraPos;
@@ -100,37 +101,52 @@ int main(int argc, char *argv[])
 
 	glProvokingVertex(GL_FIRST_VERTEX_CONVENTION);
 
+	int width, height;
+	glfwGetFramebufferSize(window, &width, &height);
+	std::cout << width << "x" << height << "\n";
+
 	// // create a framebuffer
-	// glGenFramebuffers(1, &framebufferObj);
-	// glBindFramebuffer(GL_FRAMEBUFFER, framebufferObj);
-	// // glBindFramebuffer(GL_FRAMEBUFFER, 0); // id = 0: default framebuffer
-
-	// int width, height;
-	// glfwGetFramebufferSize(window, &width, &height);
-	// std::cout << width << "x" << height << "\n";
-
-	// // creating a texture
-	// glGenTextures(1, &textureObj);
-	// glBindTexture(GL_TEXTURE_2D, textureObj);
-	// glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	// glBindTexture(GL_TEXTURE_2D, 0); // id = 0: default texture
-	// glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureObj, 0);
-
-	// // creating a renderbuffer
-	// glGenRenderbuffers(1, &renderbufferObj);
-	// glBindRenderbuffer(GL_RENDERBUFFER, renderbufferObj);
-	// glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width/2.0, height/2.0);
-	// glBindRenderbuffer(GL_RENDERBUFFER, 0); // id = 0: default renderbuffer
-	// glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderbufferObj);
-
+	glGenFramebuffers(1, &framebufferObj);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebufferObj);
 	// glBindFramebuffer(GL_FRAMEBUFFER, 0); // id = 0: default framebuffer
+
+	// Generate texture
+	GLuint texColorBuffer;
+	glGenTextures(1, &texColorBuffer);
+	glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	// Attach it to currently bound framebuffer object
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texColorBuffer, 0);
+
+	GLuint rbo;
+	glGenRenderbuffers(1, &rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0); // id = 0: default framebuffer
 
 
 	// if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	// 	std::cout << "glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE.\n";
 
+
+	GLfloat quadVertices[] = {    // Vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+        // Positions   // TexCoords
+        -1.0f,  1.0f,  0.0f, 1.0f,
+        -1.0f, -1.0f,  0.0f, 0.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+
+        -1.0f,  1.0f,  0.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f
+    };  
+          
+	
 
 	// reference velocity
 	const float constFVelocity = 1000.f;
@@ -164,15 +180,33 @@ int main(int argc, char *argv[])
 		setBothUniformVec3("lightPos", lightPos);
 		setBothUniformVec3("cameraPos", cameraPos);
 
-		// glBindFramebuffer(GL_FRAMEBUFFER, framebufferObj);
-		// glClearColor(1.0f,1.0f,1.0f,1.0f);
-		// glEnable(GL_DEPTH_TEST);
+		glBindFramebuffer(GL_FRAMEBUFFER, framebufferObj);
+		glClearColor(0.0f,0.0f,0.0f,1.0f);
+		glEnable(GL_DEPTH_TEST);
 
 		render();
 
-		// glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		// glClearColor(1.0f,1.0f,1.0f,1.0f);
-		// glClear(GL_COLOR_BUFFER_BIT);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClearColor(1.0f,1.0f,1.0f,1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glUseProgram(programZoom);
+		// Setup screen VAO
+		GLuint quadVAO, quadVBO;
+		glGenVertexArrays(1, &quadVAO);
+		glGenBuffers(1, &quadVBO);
+		glBindVertexArray(quadVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)(2 * sizeof(GLfloat)));
+		glBindVertexArray(0);
+		glBindVertexArray(quadVAO);
+		glDisable(GL_DEPTH_TEST);
+		glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindVertexArray(0);
 
 		// swap the front and back buffers of the specified window
 		glfwSwapBuffers(window);

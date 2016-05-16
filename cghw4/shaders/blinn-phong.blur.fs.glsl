@@ -4,6 +4,7 @@ layout(location=0) out vec4 color;
 in vec2 fTexcoord;
 in vec3 fragPos;
 in vec3 fNormal;
+in mat4 _gl_Position;
 
 uniform vec3 cameraPos;
 uniform vec3 lightPos;

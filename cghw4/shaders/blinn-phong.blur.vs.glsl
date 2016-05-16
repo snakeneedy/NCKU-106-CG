@@ -13,6 +13,7 @@ uniform vec2 screenSize;
 out vec2 fTexcoord;
 out vec3 fragPos;
 out vec3 fNormal;
+out vec4 _gl_Position;
 
 const float radius = 50.0;
 const float offset = 1.0 / 150.0;
@@ -51,15 +52,10 @@ mat4 lookAt(vec3 eye, vec3 center, vec3 up)
 
 void main()
 {
-    // float d = sqrt(pow(position.x * screenSize.x - cursorPos.x, 2.0) + pow(screenSize.y - position.y * screenSize.y - cursorPos.y, 2.0));
-    vec3 _cameraPos = cameraPos;
-    // if (d <= radius)
-    // {
-    //     _cameraPos = vec3(zoom) * _cameraPos;
-    // }
-    mat4 _view;
-    _view = lookAt(_cameraPos, vec3(0.0), vec3(0.0, 1.0, 0.0));
-    gl_Position = projection * _view * model * vec4(position, 1.0);
+    vec3 _cameraPos = vec3(zoom) * cameraPos;
+    mat4 _view = lookAt(_cameraPos, vec3(0.0), vec3(0.0, 1.0, 0.0));
+    gl_Position = projection * view * model * vec4(position, 1.0);
+    _gl_Position = projection * _view * model * vec4(position, 1.0);
     
     fTexcoord = texcoord;
     fragPos = vec3(model * vec4(position, 1.0));
