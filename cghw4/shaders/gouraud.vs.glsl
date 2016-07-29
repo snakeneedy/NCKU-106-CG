@@ -11,9 +11,8 @@ uniform vec3 cameraPos;
 uniform vec3 lightPos;
 uniform vec3 lightColor;
 
-uniform sampler2D uSampler;
-
-out vec4 resultColor;
+out vec2 fTexcoord;
+out vec4 resultLight;
 
 void main()
 {
@@ -34,5 +33,6 @@ void main()
     vec3 reflectDir = reflect(-lightDir, fNormal);
     vec3 specular = specularStrength * pow(max(dot(viewDir, reflectDir), 0.0), 8) * lightColor;
     
-    resultColor = texture(uSampler, texcoord) * vec4((ambient + diffuse + specular), 1.0);
+    fTexcoord = texcoord;
+    resultLight = vec4((ambient + diffuse + specular), 1.0);
 }
